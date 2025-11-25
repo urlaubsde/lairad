@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة الليرة 24</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .num-en {
+            font-family: monospace;
+            direction: ltr;
+            display: inline-block;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#163300', 
+                            primary: '#2ed06e',
+                            light: '#9fe870',
+                            bg: '#f3f4f6',
+                            card: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen pb-10">
+
+    <div id="auth-section" class="min-h-screen flex flex-col items-center justify-center p-6 bg-brand-dark relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-brand-primary/10 rounded-full blur-3xl translate-x-20 -translate-y-20"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-brand-primary/10 rounded-full blur-3xl -translate-x-20 translate-y-20"></div>
+
+        <div id="login-box" class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 relative z-10 fade-in">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center text-brand-dark font-bold text-2xl mx-auto mb-4 shadow-lg shadow-brand-primary/30">24</div>
+                <h1 class="text-2xl font-bold text-gray-800">لوحة الإدارة</h1>
+                <p class="text-gray-500 text-sm mt-1">تسجيل الدخول لتعديل الأسعار</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 mr-1">البريد الإلكتروني</label>
+                    <input id="email" type="email" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-brand-primary focus:border-brand-primary block p-3 outline-none transition-all" placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 mr-1">كلمة المرور</label>
+                    <input id="password" type="password" class="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-brand-primary focus:border-brand-primary block p-3 outline-none transition-all" placeholder="••••••••">
+                </div>
+                
+                <button id="btn-login" class="w-full text-brand-dark bg-brand-primary hover:bg-green-400 focus:ring-4 focus:outline-none focus:ring-green-300 font-bold rounded-xl text-sm px-5 py-3.5 text-center shadow-lg shadow-brand-primary/25 transition-all mt-2">تسجيل الدخول</button>
+                
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink-0 mx-4 text-gray-400 text-xs">أو</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <button id="btn-guest" class="w-full text-gray-600 bg-gray-100 hover:bg-gray-200 font-bold rounded-xl text-sm px-5 py-3 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="eye" class="w-4 h-4"></i> وضع المشاهدة (زائر)
+                </button>
+                
+                <div id="auth-msg" class="text-center text-sm text-red-500 font-bold min-h-[20px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-ui" class="hidden max-w-lg mx-auto">
+        
+        <div class="bg-brand-dark text-white p-6 pb-8 rounded-b-[2.5rem] shadow-lg sticky top-0 z-30">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-xl font-bold flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></span>
+                        لوحة التحكم
+                    </h1>
+                    <div id="whoami" class="text-xs text-gray-400 mt-1 opacity-80"></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-refresh" class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition backdrop-blur-sm text-white" title="تحديث">
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    </button>
+                    <button id="btn-logout" class="p-2 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/30 transition backdrop-blur-sm" title="خروج">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex p-1 bg-black/20 rounded-xl backdrop-blur-md">
+                <button class="flex-1 py-2 rounded-lg text-sm font-bold transition-all tab-btn bg-brand-primary text-brand-dark shadow-lg" data-target="currencies">
+                    العملات
+                </button>
+                <button class="flex-1 py-2 rounded-lg text-sm font-bold transition-all tab-btn text-gray-300 hover:text-white" data-target="gold">
+                    الذهب
+                </button>
+            </div>
+        </div>
+
+        <div class="px-4 -mt-4 relative z-20 space-y-20">
+            
+            <div id="panel-currencies" class="panel fade-in space-y-4">
+                
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-brand-primary"></i> إضافة عملة جديدة
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <input id="new-code-currency" placeholder="رمز (USD)" class="bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 focus:ring-brand-primary outline-none">
+                        <input id="new-name-currency" placeholder="الاسم (دولار)" class="bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 focus:ring-brand-primary outline-none">
+                        <input id="new-buy-currency" placeholder="شراء" type="number" class="bg-green-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-green-100 focus:ring-green-400 outline-none num-en font-bold text-green-700">
+                        <input id="new-sell-currency" placeholder="مبيع" type="number" class="bg-red-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-red-100 focus:ring-red-400 outline-none num-en font-bold text-red-700">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input id="new-unit-currency" placeholder="الوحدة (1)" value="1" class="w-1/3 bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 outline-none text-center">
+                        <button id="btn-add-currency" class="flex-1 bg-gray-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-gray-800 transition shadow-lg shadow-gray-900/20">إضافة للقائمة</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-xs font-bold text-gray-500">قائمة الأسعار الحالية</span>
+                    <button id="btn-save-all-currency" class="text-xs bg-brand-primary/10 text-brand-dark px-3 py-1.5 rounded-full font-bold hover:bg-brand-primary hover:text-white transition flex items-center gap-1">
+                        <i data-lucide="save" class="w-3 h-3"></i> حفظ الكل
+                    </button>
+                </div>
+
+                <div id="rates-body-currency" class="space-y-3 pb-24">
+                    </div>
+            </div>
+
+            <div id="panel-gold" class="panel fade-in hidden space-y-4">
+                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-yellow-500"></i> إضافة صنف ذهب
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <input id="new-purity-gold" type="number" placeholder="عيار (21)" class="bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 focus:ring-brand-primary outline-none num-en">
+                        <input id="new-desc-gold" placeholder="الوصف (ذهب عيار 21)" class="bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 focus:ring-brand-primary outline-none">
+                        <input id="new-buy-gold" placeholder="شراء" type="number" class="bg-green-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-green-100 focus:ring-green-400 outline-none num-en font-bold text-green-700">
+                        <input id="new-sell-gold" placeholder="مبيع" type="number" class="bg-red-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-red-100 focus:ring-red-400 outline-none num-en font-bold text-red-700">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input id="new-unit-gold" placeholder="الوحدة (gram)" value="gram" class="w-1/3 bg-gray-50 p-2.5 rounded-lg text-sm border-0 ring-1 ring-gray-200 outline-none text-center">
+                        <button id="btn-add-gold" class="flex-1 bg-gray-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-gray-800 transition shadow-lg shadow-gray-900/20">إضافة للقائمة</button>
+                    </div>
+                </div>
+
+                 <div class="flex justify-between items-center px-1">
+                    <span class="text-xs font-bold text-gray-500">أسعار الذهب الحالية</span>
+                    <button id="btn-save-all-gold" class="text-xs bg-brand-primary/10 text-brand-dark px-3 py-1.5 rounded-full font-bold hover:bg-brand-primary hover:text-white transition flex items-center gap-1">
+                        <i data-lucide="save" class="w-3 h-3"></i> حفظ الكل
+                    </button>
+                </div>
+
+                <div id="rates-body-gold" class="space-y-3 pb-24">
+                     </div>
+            </div>
+
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 text-center text-xs font-bold text-gray-500 z-50 flex justify-between px-6 items-center shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+            <span id="last-updated">انتظار التحديث...</span>
+            <span id="status" class="bg-gray-100 px-2 py-1 rounded text-[10px]">جاهز</span>
+        </div>
+    </div>
+
+    <script>
+        /* ================== CONFIG ================== */
+        const SUPABASE_URL = "https://xcmovzkbpumvufvmahew.supabase.co";
+        const ANON_KEY      = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjbW92emticHVtdnVmdm1haGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MTc2MjYsImV4cCI6MjA3OTE5MzYyNn0.aLxh6TSQ6pznFoeWpgnbdDYv1eJBNKtcdonyLhzJUZs";
+
+        const TABLE_CURRENCY = "currency_rates";
+        const TABLE_GOLD     = "gold_rates";
+        const PK_FIELD = "id";
+
+        /* ====== DOM ====== */
+        const loginBox = document.getElementById('auth-section'); // Wrapper
+        const emailIn = document.getElementById('email');
+        const passIn  = document.getElementById('password');
+        const btnLogin = document.getElementById('btn-login');
+        const btnGuest = document.getElementById('btn-guest');
+        const authMsg  = document.getElementById('auth-msg');
+
+        const mainUI = document.getElementById('main-ui');
+        const whoami = document.getElementById('whoami');
+        const lastUpdated = document.getElementById('last-updated');
+        const btnRefresh = document.getElementById('btn-refresh');
+        const btnLogout  = document.getElementById('btn-logout');
+
+        // Containers (Divs now, not tbodys)
+        const ratesBodyCurrency = document.getElementById('rates-body-currency');
+        const ratesBodyGold     = document.getElementById('rates-body-gold');
+        const statusDiv         = document.getElementById('status');
+
+        /* Inputs Currency */
+        const newCodeCurrency = document.getElementById('new-code-currency');
+        const newNameCurrency = document.getElementById('new-name-currency');
+        const newUnitCurrency = document.getElementById('new-unit-currency');
+        const newBuyCurrency  = document.getElementById('new-buy-currency');
+        const newSellCurrency = document.getElementById('new-sell-currency');
+        const btnAddCurrency  = document.getElementById('btn-add-currency');
+        const btnSaveAllCurrency = document.getElementById('btn-save-all-currency');
+
+        /* Inputs Gold */
+        const newPurityGold = document.getElementById('new-purity-gold');
+        const newDescGold   = document.getElementById('new-desc-gold');
+        const newUnitGold   = document.getElementById('new-unit-gold');
+        const newBuyGold    = document.getElementById('new-buy-gold');
+        const newSellGold   = document.getElementById('new-sell-gold');
+        const btnAddGold    = document.getElementById('btn-add-gold');
+        const btnSaveAllGold = document.getElementById('btn-save-all-gold');
+
+        let accessToken = localStorage.getItem('supabase_access_token') || null;
+        let userEmail   = localStorage.getItem('supabase_user_email') || null;
+
+        let cacheCurrency = [];
+        let cacheGold = [];
+
+        /* ========== Helpers ========== */
+        function setLoggedInUI(email){
+            loginBox.classList.add('hidden'); // Hide entire auth screen
+            mainUI.classList.remove('hidden');
+            whoami.innerHTML = email ? `مرحباً، <span class="font-mono text-brand-primary">${email.split('@')[0]}</span>` : 'وضع الزائر (للقراءة فقط)';
+            
+            // Re-init icons when view changes
+            if(window.lucide) window.lucide.createIcons();
+        }
+
+        function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+        function getAuthHeader() {
+            return accessToken ? `Bearer ${accessToken}` : `Bearer ${ANON_KEY}`;
+        }
+
+        /* ===== Auth ===== */
+        async function signIn(email,password){
+            authMsg.textContent = 'جاري التحقق...';
+            try {
+                const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method:'POST',
+                    headers:{ 'apikey': ANON_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (data?.access_token){
+                    accessToken = data.access_token;
+                    localStorage.setItem('supabase_access_token', accessToken);
+                    localStorage.setItem('supabase_user_email', email);
+                    userEmail = email;
+                    setLoggedInUI(email);
+                    await loadAll();
+                } else {
+                    authMsg.textContent = data?.error_description || data?.error || 'بيانات الدخول غير صحيحة';
+                }
+            } catch (err) {
+                console.error(err);
+                authMsg.textContent = 'خطأ في الاتصال';
+            }
+        }
+
+        /* ===== Load Data ===== */
+        async function loadAll(){
+            statusDiv.textContent = 'جاري التحديث...';
+            statusDiv.className = "bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px]";
+            
+            await Promise.all([ loadTableCurrency(), loadTableGold() ]);
+            
+            lastUpdated.textContent = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+            statusDiv.textContent = 'محدث';
+            statusDiv.className = "bg-green-100 text-green-800 px-2 py-1 rounded text-[10px]";
+        }
+
+        async function loadTableCurrency(){
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_CURRENCY}?select=*&order=id`, {
+                    headers: { 'apikey': ANON_KEY, 'Authorization': getAuthHeader() }
+                });
+                if (!res.ok) throw new Error('Error');
+                const data = await res.json();
+                cacheCurrency = data.map(r => ({ ...r, _edited:false }));
+                renderCurrency();
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = 'خطأ عملات';
+            }
+        }
+
+        async function loadTableGold(){
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_GOLD}?select=*&order=purity.desc`, { // ordered by purity usually
+                    headers: { 'apikey': ANON_KEY, 'Authorization': getAuthHeader() }
+                });
+                if (!res.ok) throw new Error('Error');
+                const data = await res.json();
+                cacheGold = data.map(r => ({ ...r, _edited:false }));
+                renderGold();
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = 'خطأ ذهب';
+            }
+        }
+
+        /* ===== Renders (The Mobile Card Transformation) ===== */
+        
+        // Helper to Create Card HTML
+        function createCardHTML(id, title, subtitle, unit, buy, sell, type) {
+            const table = type === 'currency' ? TABLE_CURRENCY : TABLE_GOLD;
+            return `
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative group transition-all hover:shadow-md">
+                    <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full ${type==='currency'?'bg-blue-50 text-blue-600':'bg-yellow-50 text-yellow-600'} flex items-center justify-center font-bold text-lg">
+                                ${type==='currency' ? title.charAt(0) : 'Au'}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">${title}</h4>
+                                <div class="text-[10px] text-gray-400 font-mono">${subtitle} • ${unit}</div>
+                            </div>
+                        </div>
+                        <button data-act="delete" data-id="${id}" data-table="${table}" class="text-gray-300 hover:text-red-500 transition p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                        <div class="bg-red-50/50 p-2 rounded-xl border border-red-100/50">
+                            <label class="text-[10px] text-red-400 block mb-1 font-bold text-center">مبيع (Sell)</label>
+                            <input data-id="${id}" data-field="sell_price" value="${sell}" type="number" step="any" class="w-full bg-white text-center font-bold text-red-600 rounded-lg p-1 text-lg outline-none focus:ring-1 focus:ring-red-200 num-en transition shadow-sm">
+                        </div>
+                        <div class="bg-green-50/50 p-2 rounded-xl border border-green-100/50">
+                            <label class="text-[10px] text-green-400 block mb-1 font-bold text-center">شراء (Buy)</label>
+                            <input data-id="${id}" data-field="buy_price" value="${buy}" type="number" step="any" class="w-full bg-white text-center font-bold text-green-600 rounded-lg p-1 text-lg outline-none focus:ring-1 focus:ring-green-200 num-en transition shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex justify-end">
+                         <button data-act="save" data-id="${id}" data-table="${table}" class="text-xs bg-gray-100 text-gray-600 hover:bg-brand-primary hover:text-white px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 w-full justify-center group-focus-within:bg-brand-primary group-focus-within:text-white">
+                            <i data-lucide="check" class="w-3 h-3"></i> حفظ التعديل
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCurrency(){
+            const container = ratesBodyCurrency;
+            container.innerHTML = '';
+            if (!cacheCurrency.length) {
+                container.innerHTML = `<div class="text-center p-8 text-gray-400 text-sm bg-white rounded-2xl">لا توجد عملات مضافة</div>`;
+                return;
+            }
+            
+            let html = '';
+            cacheCurrency.forEach(row => {
+                html += createCardHTML(
+                    row[PK_FIELD], 
+                    escapeHtml(row.name), 
+                    escapeHtml(row.code), 
+                    escapeHtml(row.unit), 
+                    row.buy_price, 
+                    row.sell_price, 
+                    'currency'
+                );
+            });
+            container.innerHTML = html;
+            attachEvents(container, cacheCurrency);
+        }
+
+        function renderGold(){
+            const container = ratesBodyGold;
+            container.innerHTML = '';
+            if (!cacheGold.length) {
+                container.innerHTML = `<div class="text-center p-8 text-gray-400 text-sm bg-white rounded-2xl">لا توجد بيانات ذهب</div>`;
+                return;
+            }
+
+            let html = '';
+            cacheGold.forEach(row => {
+                html += createCardHTML(
+                    row[PK_FIELD], 
+                    escapeHtml(row.description), 
+                    `عيار ${row.purity}`, 
+                    escapeHtml(row.unit), 
+                    row.buy_price, 
+                    row.sell_price, 
+                    'gold'
+                );
+            });
+            container.innerHTML = html;
+            attachEvents(container, cacheGold);
+        }
+
+        function attachEvents(container, cacheSource) {
+            // Re-init icons for new content
+            if(window.lucide) window.lucide.createIcons();
+
+            // Inputs
+            container.querySelectorAll('input[data-field]').forEach(inp => {
+                inp.addEventListener('input', e => {
+                    const id = e.target.dataset.id;
+                    const field = e.target.dataset.field;
+                    const row = cacheSource.find(r => String(r[PK_FIELD]) === String(id));
+                    if (row) {
+                        row[field] = parseFloat(e.target.value || 0);
+                        row._edited = true;
+                        // Visual feedback that row is edited
+                        const btn = e.target.closest('.group').querySelector('button[data-act="save"]');
+                        btn.classList.add('bg-brand-primary', 'text-white', 'shadow-lg');
+                        btn.innerHTML = `<i data-lucide="save" class="w-3 h-3"></i> حفظ (تم التعديل)`;
+                        if(window.lucide) window.lucide.createIcons();
+                    }
+                });
+            });
+
+            // Buttons
+            container.querySelectorAll('button[data-act="save"]').forEach(b => b.addEventListener('click', onSaveSingle));
+            container.querySelectorAll('button[data-act="delete"]').forEach(b => b.addEventListener('click', onDeleteSingle));
+        }
+
+        /* ===== Actions ===== */
+        async function onSaveSingle(e){
+            const btn = e.currentTarget;
+            const id = btn.dataset.id;
+            const table = btn.dataset.table;
+            const cache = table === TABLE_CURRENCY ? cacheCurrency : cacheGold;
+            const row = cache.find(r => String(r[PK_FIELD]) === String(id));
+            
+            if (!row) return;
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '...';
+            btn.disabled = true;
+
+            try {
+                const body = { buy_price: row.buy_price, sell_price: row.sell_price };
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${PK_FIELD}=eq.${encodeURIComponent(id)}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                if (!res.ok) throw new Error('Failed');
+                
+                const rtn = await res.json();
+                // Update Cache
+                if (Array.isArray(rtn) && rtn[0]) {
+                    const idx = cache.findIndex(r => String(r[PK_FIELD]) === String(id));
+                    if (idx !== -1) cache[idx] = { ...cache[idx], ...rtn[0], _edited:false };
+                }
+                
+                // Visual Success
+                btn.classList.remove('bg-brand-primary', 'text-white', 'shadow-lg');
+                btn.classList.add('bg-green-100', 'text-green-700');
+                btn.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3"></i> تم الحفظ`;
+                setTimeout(() => {
+                    if (table === TABLE_CURRENCY) renderCurrency(); else renderGold();
+                }, 1000);
+
+            } catch (err) {
+                console.error(err);
+                btn.innerHTML = 'خطأ!';
+                btn.classList.add('bg-red-100', 'text-red-600');
+                btn.disabled = false;
+            }
+        }
+
+        async function onDeleteSingle(e){
+            const id = e.currentTarget.dataset.id;
+            const table = e.currentTarget.dataset.table;
+            
+            if (!confirm('هل أنت متأكد من الحذف؟ لا يمكن التراجع.')) return;
+            
+            statusDiv.textContent = 'جاري الحذف...';
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${PK_FIELD}=eq.${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': ANON_KEY, 'Authorization': getAuthHeader() }
+                });
+                if (!res.ok) throw new Error('Failed');
+                
+                if (table === TABLE_CURRENCY) {
+                    cacheCurrency = cacheCurrency.filter(r => String(r[PK_FIELD]) !== String(id));
+                    renderCurrency();
+                } else {
+                    cacheGold = cacheGold.filter(r => String(r[PK_FIELD]) !== String(id));
+                    renderGold();
+                }
+                statusDiv.textContent = 'تم الحذف';
+            } catch (err) {
+                console.error(err);
+                alert('فشل الحذف، تأكد من صلاحياتك');
+            }
+        }
+
+        /* ===== Add New Logic ===== */
+        btnAddCurrency.addEventListener('click', async () => {
+            const code = newCodeCurrency.value.trim();
+            const name = newNameCurrency.value.trim();
+            const unit = newUnitCurrency.value.trim();
+            const buy  = parseFloat(newBuyCurrency.value) || 0;
+            const sell = parseFloat(newSellCurrency.value) || 0;
+            
+            if (!code || !name) { alert('الرجاء إدخال الرمز والاسم'); return; }
+            
+            btnAddCurrency.textContent = '...';
+            try {
+                const body = { code, name, unit, buy_price: buy, sell_price: sell };
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_CURRENCY}`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed');
+                const rtn = await res.json();
+                cacheCurrency.unshift({ ...rtn[0], _edited:false });
+                renderCurrency();
+                
+                // Reset inputs
+                newCodeCurrency.value = ''; newNameCurrency.value = ''; newBuyCurrency.value = ''; newSellCurrency.value = '';
+                btnAddCurrency.textContent = 'إضافة للقائمة';
+            } catch (err) {
+                console.error(err);
+                alert('فشل الإضافة');
+                btnAddCurrency.textContent = 'إضافة للقائمة';
+            }
+        });
+
+        btnAddGold.addEventListener('click', async () => {
+            const purity = parseInt(newPurityGold.value) || 0;
+            const desc = newDescGold.value.trim();
+            const unit = newUnitGold.value.trim() || 'gram';
+            const buy = parseFloat(newBuyGold.value) || 0;
+            const sell = parseFloat(newSellGold.value) || 0;
+            
+            if (!purity || !desc) { alert('الرجاء إدخال العيار والوصف'); return; }
+            
+            btnAddGold.textContent = '...';
+            try {
+                const body = { purity, description: desc, unit, buy_price: buy, sell_price: sell };
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_GOLD}`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed');
+                const rtn = await res.json();
+                cacheGold.unshift({ ...rtn[0], _edited:false });
+                renderGold();
+                
+                newPurityGold.value = ''; newDescGold.value = ''; newBuyGold.value = ''; newSellGold.value = '';
+                btnAddGold.textContent = 'إضافة للقائمة';
+            } catch (err) {
+                console.error(err);
+                alert('فشل الإضافة');
+                btnAddGold.textContent = 'إضافة للقائمة';
+            }
+        });
+
+        /* ===== Bulk Save ===== */
+        async function saveAll(cacheSource, table) {
+            const edited = cacheSource.filter(r => r._edited);
+            if (!edited.length) { alert('لا توجد تغييرات للحفظ'); return; }
+            
+            statusDiv.textContent = 'جاري الحفظ الجماعي...';
+            
+            for (const row of edited) {
+                try {
+                    await fetch(`${SUPABASE_URL}/rest/v1/${table}?${PK_FIELD}=eq.${encodeURIComponent(row[PK_FIELD])}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': ANON_KEY,
+                            'Authorization': getAuthHeader(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ buy_price: row.buy_price, sell_price: row.sell_price })
+                    });
+                    row._edited = false;
+                } catch(e) { console.error(e); }
+            }
+            
+            if(table === TABLE_CURRENCY) renderCurrency(); else renderGold();
+            statusDiv.textContent = 'تم الحفظ بنجاح';
+            setTimeout(() => statusDiv.textContent = 'جاهز', 2000);
+        }
+
+        btnSaveAllCurrency.addEventListener('click', () => saveAll(cacheCurrency, TABLE_CURRENCY));
+        btnSaveAllGold.addEventListener('click', () => saveAll(cacheGold, TABLE_GOLD));
+
+
+        /* ===== Init & Tabs ===== */
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('bg-brand-primary', 'text-brand-dark', 'shadow-lg');
+                    b.classList.add('text-gray-300');
+                });
+                btn.classList.remove('text-gray-300');
+                btn.classList.add('bg-brand-primary', 'text-brand-dark', 'shadow-lg');
+                
+                const t = btn.dataset.target;
+                document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+                document.getElementById('panel-' + t).classList.remove('hidden');
+                
+                // Re-trigger icons just in case
+                if(window.lucide) window.lucide.createIcons();
+            });
+        });
+
+        btnRefresh.addEventListener('click', loadAll);
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('supabase_access_token');
+            location.reload();
+        });
+        btnLogin.addEventListener('click', () => signIn(emailIn.value.trim(), passIn.value));
+        btnGuest.addEventListener('click', () => {
+            localStorage.removeItem('supabase_access_token');
+            loginBox.classList.add('hidden');
+            mainUI.classList.remove('hidden');
+            whoami.textContent = 'وضع زائر';
+            loadAll();
+        });
+
+        // Initialize Icons
+        if(window.lucide) window.lucide.createIcons();
+
+        // Check Login on Start
+        if (accessToken) {
+            setLoggedInUI(userEmail);
+            loadAll();
+        }
+
+    </script>
+</body>
+</html>
